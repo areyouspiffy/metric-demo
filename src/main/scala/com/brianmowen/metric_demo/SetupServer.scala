@@ -5,7 +5,6 @@ import java.util.concurrent.Executors
 import cats.effect._
 import org.http4s.HttpRoutes
 import org.http4s.dsl.Http4sDsl
-import org.http4s.metrics.prometheus.PrometheusExportService
 import org.http4s.server.Router
 import org.http4s.server.blaze.BlazeServerBuilder
 
@@ -25,18 +24,10 @@ object SetupServer {
 
     val router: HttpRoutes[F] = CORS(Router("/api" -> api))
 
-    BlazeServerBuilder[F]
+    BlazeServerBuilder[F](ExecutionContext.global)
       .withHttpApp(router.orNotFound)
       .bindHttp(sc.httpPort, "0.0.0.0")
       .resource
   }
-
-  def health[F[_]: ConcurrentEffect: Timer: ContextShift](
-      sc: ServiceConfig,
-      prometheusExportService: PrometheusExportService[F]) =
-    BlazeServerBuilder[F]
-      .withHttpApp(Router("/" -> prometheusExportService.routes).orNotFound)
-      .bindHttp(sc.healthPort, "0.0.0.0")
-      .resource
 
 }
